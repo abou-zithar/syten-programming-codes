@@ -1,0 +1,427 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package sicxe;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+/**
+ *
+ * @author Abdelrahman Taher
+ */
+public class ReadFile {
+    String x[][];
+    
+    int c=0;
+    int hexa=0;
+    Instructions b=new Instructions();
+    
+    public void setC(int c) {
+        this.c = c;
+    }
+    public void setX(String[][] x) {
+        this.x = x;
+        
+    }
+
+    public void Locator(String x[][]){
+        //this.x=x;
+        for (int i=0; i<c;i++){ 
+            try{
+            if (i==0){
+            hexa = Integer.parseInt(x[0][3], 16);
+                        x[i][0] = x[i+1][0] = Integer.toHexString(hexa);
+            }
+            if (i>=1&&!x[i][2].contains("+")&&!x[i][2].contains("RESB")){ 
+               hexa+=Integer.parseInt(b.getOPTAB(x[i][2]));
+               x[i+1][0]=Integer.toHexString(hexa);
+            }
+            if (i>1&&x[i][2].contains("+")){
+              hexa+=4;  
+              x[i+1][0]=Integer.toHexString(hexa);
+            }
+            if (i>1&&x[i][2].contains("BYTE")){
+                if(x[i][3].charAt(0)=='C')
+                hexa+=x[i][3].length()-3; 
+                else //start by x
+                    hexa+=(x[i][3].length()-3)/2;
+                
+                x[i+1][0]=Integer.toHexString(hexa);
+            }  
+            if (i>1&&x[i][2].contains("RESW")){
+                int j=Integer.parseInt(x[i][3])*3;
+                hexa+=j;
+                x[i+1][0]=Integer.toHexString(hexa);
+            } 
+            if (i>1&&x[i][2].contains("RESB")){
+                int j=Integer.parseInt(x[i][3]);
+                hexa+=j;  
+                x[i+1][0]=Integer.toHexString(hexa);
+            }    
+        }catch (Exception e){}
+        }
+    } 
+    public void SimpleTable(String x[][]){
+         System.out.println("Symbol Table");
+            for (int i=0; i<c;i++){  
+                if (x[i][1]!=null&&!x[i][1].equalsIgnoreCase("**") && i>0) {
+                    System.out.println("" + x[i][0] + "\t" + x[i][1]);
+                    //System.out.println("\n");
+                }
+         }
+    } 
+    static String six(String x){
+    if (x.length()==1)
+        return "00000"+x;
+    if (x.length()==2)
+        return "0000"+x;
+    if (x.length()==3)
+        return "000"+x;
+    else if (x.length()==4)
+        return "00"+x;
+    else if (x.length()==5)
+        return "0"+x;
+   
+   else
+        return x;
+    }
+
+    static String Fillbits(String x){
+    if (x.length()==1)
+        return "0000000"+x;
+    else if (x.length()==4)
+        return "0000"+x;
+    else if (x.length()==5)
+        return "000"+x;
+   else if (x.length()==6)
+        return "00"+x;
+   else if (x.length()==7)
+        return "0"+x;
+   else
+        return x;
+    }
+
+    static String DispNO(String x){
+     if (x.length()==13)
+         return "0000000"+x;
+     if (x.length()==15)
+         return "00000"+x;
+     else
+         return x;
+    }
+    
+     static String AllteenDigits(String x){
+    if (x==null)
+        return "000000000000";
+     if (x.length()==1)
+        return "00000000000"+x;
+    if (x.length()==2)
+        return "0000000000"+x;
+    if (x.length()==6)
+         return "000000"+x;
+     if (x.length()==5)
+         return "0000000"+x;
+     if (x.length()==4)
+         return "00000000"+x;
+     if (x.length()==3)
+         return "000000000"+x;
+     if (x.length()==12)
+         return "0000"+x;     
+     if (x.length()>16)
+         return ""+x.substring(20);
+         
+     
+     else
+         return x;
+    }
+
+     
+    public void ObjectCode(String x[][]){
+     
+
+        for(int i=0;i<x.length;i++){
+            //if (b.getOPTAB(x[i][2])=="3");
+            
+                 
+                //format 3
+            if (b.getOPTAB(x[i][2]).equals("3")){
+                
+                String oop=b.NumOP(x[i][2]);          
+                String opcodePart=Integer.toBinaryString(Integer.parseInt(oop,16));
+                opcodePart=Fillbits(opcodePart);
+            x[i][4]=opcodePart;         
+            // RSUB
+                        if (x[i][2].equals("RSUB")){
+                        String myop=x[i][4];
+                        char p[]=myop.toCharArray();
+                        x[i][4]=String.valueOf(p); 
+                        x[i][4]+=AllteenDigits(AllteenDigits(x[i][3]));
+                        String []sp=b.split(x[i][4]);  
+                        int len= x[i][4].length()/4;
+                        x[i][4]="";
+                        for (int c=0 ; c<len;c++)
+                        x[i][4]+=b.ConvertTo(sp[c]); 
+                    } 
+                
+
+            
+            }
+              //format 4
+              String op;
+            if (x[i][2].contains("+")){
+                op=b.NumOP(x[i][2].substring(1));
+                String opcodePart=Integer.toBinaryString(Integer.parseInt(op,16));
+                opcodePart=Fillbits(opcodePart);
+                x[i][4]=opcodePart;
+            }
+
+        //Handing n & i
+         try{   
+         if (x[i][3].contains("#")){
+                String myop=x[i][4];
+                char p[]=myop.toCharArray();
+                p[7]='1';
+                x[i][4]=String.valueOf(p);
+            }
+            if (x[i][3].contains("@")){
+                String myop=x[i][4];
+                char p[]=myop.toCharArray();
+                p[6]='1';
+                x[i][4]=String.valueOf(p);
+            }
+            if (x[i][2].contains("+")&&!x[i][3].contains("#"))
+            {
+                String myop=x[i][4];
+                char p[]=myop.toCharArray();
+                p[6]='1';
+                p[7]='1';
+                x[i][4]=String.valueOf(p);
+            } 
+            
+            
+
+        }
+        catch(Exception y){}
+         
+    }  
+    }
+    
+    //Indexed Registers
+    public void Rest(String x[][]){
+        for(int i=0;i<x.length;i++){
+        if (!b.getOPTAB(x[i][2]).equals("2")){
+        try{
+            if (x[i][3].contains(",X")){
+            x[i][4]+="1";    
+                
+            }
+            
+            else if (!x[i][2].contains("START")&&!x[i][2].contains("BASE")&&!x[i][2].contains("BYTE")&&!x[i][2].contains("RESW")&&!x[i][2].contains("RESB")&&!x[i][2].contains("END")) 
+                x[i][4]+="0";
+            
+            //if format 4 then x,b,p=0 & e=1
+            if(x[i][2].contains("+")){
+                String Disp=TargetAddress(x[i][3],x);
+                
+                String opcodePart=Integer.toBinaryString(Integer.parseInt(Disp,16));
+                x[i][4]+="001"+DispNO(opcodePart);
+                  x[i][4]=b.ConvertTo(x[i][4]);
+
+                
+            } 
+            }catch(Exception y){
+            }   
+            }
+        try {
+            if (x[i][2].contains("+")&&x[i][3].contains("#")){
+                String opcodePart=Integer.toBinaryString(Integer.parseInt(x[i][3].substring(1)));
+                x[i][4]+="001"+DispNO(opcodePart);
+                //convert final object code
+                x[i][4]=b.ConvertTo(x[i][4]);
+            }
+        } catch(Exception y){}
+        }
+        
+    }
+    
+    
+    public void FormatThree(String x[][]) {
+        String base= "33";
+        
+            for (int i= 0 ; i<x.length;i++){
+                int disp=0;
+                try {
+                
+
+                if (b.getOPTAB(x[i][2])=="3"){
+//                    System.out.println(""+x[i][2]+"\t"+x[i][3]);
+                    if (!x[i][3].contains("#") && !x[i][3].contains("@")){
+//                        System.out.println(""+x[i][2]+"\t"+x[i][3]);
+                        String myop=x[i][4];
+                        char p[]=myop.toCharArray();
+                        p[6]='1';
+                        p[7]='1';
+                        x[i][4]=String.valueOf(p);  
+                    }
+//                   
+                       if (x[i][3].contains("#") ||x[i][3].contains("@")){
+                       
+                        if (TargetAddress(x[i][3].substring(1),x)!=""){
+                            disp= Integer.parseInt(TargetAddress(x[i][3].substring(1),x) ,16)-Integer.parseInt(x[i+1][0],16);
+                            if (disp<=2047&& disp >=-2047){
+                                x[i][4]+="010"+AllteenDigits(Integer.toBinaryString(disp));
+                              String []sp=b.split(x[i][4]);  
+                              int len= x[i][4].length()/4;
+                              x[i][4]="";
+                              for (int c=0 ; c<len;c++)
+                              x[i][4]+=b.ConvertTo(sp[c]); 
+                              
+                            }
+                        }
+                        else{
+                            x[i][4]+="000"+AllteenDigits(Integer.toBinaryString(Integer.parseInt(x[i][3].substring(1))));
+                            String []sp=b.split(x[i][4]);
+                            int len= x[i][4].length()/4;
+                            x[i][4]="";
+                            for (int c=0 ; c<len;c++)
+                                x[i][4]+=b.ConvertTo(sp[c]); 
+                                        
+                            } 
+                    }  
+                    if (!x[i][3].contains("#")){
+//                        System.out.println(""+x[i][2]+"  "+x[i][3]);
+                    disp= Integer.parseInt(TargetAddress(x[i][3],x) ,16)-Integer.parseInt(x[i+1][0],16);
+//                    System.out.println(""+x[i][2]+"\t"+x[i][3] +"  disp  ="+disp+"  TA= "+TargetAddress(x[i][3],x) +"  Pc= "+x[i+1][0]);    
+                    // PC Relative
+                        if (disp<2047&& disp >-2048){
+                                
+                                x[i][4]+="010"+AllteenDigits(Integer.toBinaryString(disp));
+//                                System.out.println(""+x[i][2]+"\t"+x[i][3]+"   "+x[i][4]);
+                                String []sp=b.split(x[i][4]);  
+                                int len= x[i][4].length()/4;
+                                x[i][4]="";
+                                for (int c=0 ; c<len;c++)
+                                x[i][4]+=b.ConvertTo(sp[c]); 
+//                       0011 00 1 1 0 0 1 0 1111 1111 1010
+                        }
+                        //base Relative
+                        else if (disp<=4095){ 
+//                            System.out.println(""+x[i][2]+"\t"+x[i][3]);
+                            disp= Integer.parseInt(TargetAddress(x[i][3],x) ,16)-Integer.parseInt(base,16);
+                            x[i][4]+="100"+AllteenDigits(Integer.toBinaryString(disp));
+                            String []sp=b.split(x[i][4]);  
+                            int len= x[i][4].length()/4;
+                            x[i][4]="";
+                            for (int c=0 ; c<len;c++)
+                            x[i][4]+=b.ConvertTo(sp[c]); 
+                        
+                        }
+                    }
+                    
+                    
+                  
+                    
+            
+            
+        }
+
+        }catch (Exception o){}
+        try {
+            if (x[i][3].contains(",X")){
+                
+                 
+                    disp= Integer.parseInt(TargetAddress(x[i][3].replaceAll(",X",""),x) ,16)-Integer.parseInt(x[i+1][0],16);
+                    // PC Relative
+                        if (disp<2047&& disp >-2048){
+                                
+                                x[i][4]+="010"+AllteenDigits(Integer.toBinaryString(disp));
+                                String []sp=b.split(x[i][4]);  
+                                int len= x[i][4].length()/4;
+                                x[i][4]="";
+                                for (int c=0 ; c<len;c++)
+                                x[i][4]+=b.ConvertTo(sp[c]); 
+
+                        }
+                        //base Relative
+                        else if (disp<=4095){
+                            disp= Integer.parseInt(TargetAddress(x[i][3].replaceAll(",X",""),x) ,16)-Integer.parseInt(base,16);
+                            x[i][4]+="100"+AllteenDigits(Integer.toBinaryString(disp));
+                            String []sp=b.split(x[i][4]);  
+                            int len= x[i][4].length()/4;
+                            x[i][4]="";
+                            for (int c=0 ; c<len;c++)
+                            x[i][4]+=b.ConvertTo(sp[c]); 
+                        
+                        }
+            }}catch (Exception o){}
+        if (x[i][2].equals("BYTE")){
+          if (x[i][3].charAt(0)=='X')
+              x[i][4]=x[i][3].replaceAll("'","").replaceAll("X", "");
+          else if (x[i][3].charAt(0)=='C'){
+              
+              String digits=x[i][3].replaceAll("'","").replaceAll("C", "");
+              x[i][4]="";
+                        char p[]=digits.toCharArray();
+                       for (int u=0; u<p.length;u++){
+                           x[i][4]+=String.valueOf((int)p[u]);
+                       }
+
+          }
+                
+              
+        }
+        if (x[i][2].equals("WORD"))
+        {
+           x[i][4]=six(Integer.toHexString(Integer.parseInt(x[i][3],16))); 
+        }
+        if (x[i][2].contains("START") || x[i][2].contains("BASE") ||x[i][2].contains("RESW")||x[i][2].contains("RESB")||x[i][2].contains("END")) 
+             x[i][4]="No Opjectcode";
+    }
+       
+    }
+    
+    public String TargetAddress(String inst, String x[][]){
+             //format 4
+       String u="";
+             for (int i=0 ; i<x.length; i++){
+                
+                 if (inst.equals(x[i][1])){
+                      u =x[i][0];
+                      
+                 }
+
+                 
+             }
+             
+            return u;
+            
+    }
+
+    public void getX() {
+        //printing location counters
+        Locator(x);
+        ObjectCode(x);
+        Rest(x);
+        FormatThree(x);
+        
+        // printing data of table
+        for (int y = 0; y < c; y++) {
+            for (int j = 0; j < 5; j++) {
+                System.out.print("" + x[y][j] + "\t");
+            }
+            System.out.println("\n");
+        }
+        //printing simple table
+        SimpleTable(x);
+    }
+       
+
+                   
+                   
+    
+}
